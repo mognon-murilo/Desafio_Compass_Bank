@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="BankChallenge">
+    <CLASSES>
+      <root url="jar://$PROJECT_DIR$/../../mysql-connector-j-9.2.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="file://$PROJECT_DIR$/src/main/java" />
+    </SOURCES>
+  </library>
+</component>
