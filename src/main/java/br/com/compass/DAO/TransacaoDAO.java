@@ -19,13 +19,13 @@ public class TransacaoDAO {
         ResultSet rs = null;
 
         try {
-            conn = db.DB.getConnection();
+            conn = DB.getConnection();
             st = conn.createStatement();
             rs = st.executeQuery("SELECT * FROM Transacao");
 
             while (rs.next()) {
-                Conta contaOrigem = new Conta(rs.getInt("ContaOrigemId"));  // só o ID
-                Conta contaDestino = new Conta(rs.getInt("ContaDestinoId")); // só o ID
+                Conta contaOrigem = new Conta(rs.getInt("ContaOrigemId"));
+                Conta contaDestino = new Conta(rs.getInt("ContaDestinoId"));
 
                 Transacao transacao = new Transacao(
                         contaDestino,
@@ -41,9 +41,9 @@ public class TransacaoDAO {
         } catch (SQLException e) {
             e.printStackTrace();
         } finally {
-            db.DB.closeResultSet(rs);
-            db.DB.closeStatement(st);
-            db.DB.closeConnection();
+            DB.closeResultSet(rs);
+            DB.closeStatement(st);
+            DB.closeConnection();
         }
 
         return list;

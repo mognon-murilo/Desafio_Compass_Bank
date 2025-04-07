@@ -1,5 +1,7 @@
 package br.com.compass.Entity;
 
+import java.math.BigDecimal;
+
 public class Conta {
 
     private int id;
@@ -9,7 +11,7 @@ public class Conta {
     private String dataNascimento;
     private String tipoConta;
     private String senhaHash;
-    private double saldo;
+    private BigDecimal    saldo;
     private boolean bloqueada;
     private int tentativasLogin;
 
@@ -21,7 +23,7 @@ public class Conta {
         this.dataNascimento = dataNascimento;
         this.tipoConta = tipoConta;
         this.senhaHash = senhaHash;
-        this.saldo = 0.0;
+        this.saldo = BigDecimal.valueOf(0.0);
         this.bloqueada = false;
         this.tentativasLogin = 0;
     }
@@ -31,6 +33,27 @@ public class Conta {
 
     public Conta(){
 
+    }
+
+    public void depositar(BigDecimal valor) {
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Valor inválido para depósito.");
+        }
+        this.saldo = this.saldo.add(valor);
+    }
+
+    public void sacar(BigDecimal valor) {
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Valor inválido para saque.");
+        }
+        if (this.saldo.compareTo(valor) < 0) {
+            throw new IllegalArgumentException("Saldo insuficiente.");
+        }
+        this.saldo = this.saldo.subtract(valor);
+    }
+
+    public BigDecimal consultarSaldo() {
+        return saldo;
     }
 
     public boolean isBloqueada() {
@@ -73,12 +96,12 @@ public class Conta {
         this.nome = nome;
     }
 
-    public double getSaldo() {
+    public BigDecimal getSaldo() {
         return saldo;
     }
 
-    public void setSaldo(double saldo) {
-        this.saldo = saldo;
+    public void setSaldo(BigDecimal saldo) {
+        this.saldo =saldo;
     }
 
     public String getSenhaHash() {
@@ -94,6 +117,7 @@ public class Conta {
     }
 
     public void setTelefone(String telefone) {
+
         this.telefone = telefone;
     }
 
@@ -102,6 +126,7 @@ public class Conta {
     }
 
     public void setTentativasLogin(int tentativasLogin) {
+
         this.tentativasLogin = tentativasLogin;
     }
 

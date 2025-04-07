@@ -1,6 +1,4 @@
-package db;
-
-import br.com.compass.DB.dbException;
+package br.com.compass.DAO;
 
 import java.io.FileInputStream;
 import java.io.IOException;

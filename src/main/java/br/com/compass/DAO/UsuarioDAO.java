@@ -1,19 +1,15 @@
 package br.com.compass.DAO;
 
 import br.com.compass.Entity.Usuario;
-import br.com.compass.util.HashUtil;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
 
 public class UsuarioDAO {
-    public Usuario findByCpf(String cpf) {
-        Connection conn = null;
+
+    public Usuario findByCpf(Connection conn, String cpf) {
         PreparedStatement st = null;
         ResultSet rs = null;
         try {
-            conn = db.DB.getConnection();
             st = conn.prepareStatement("SELECT * FROM Usuario WHERE cpf = ?");
             st.setString(1, cpf);
             rs = st.executeQuery();
@@ -33,16 +29,18 @@ public class UsuarioDAO {
             e.printStackTrace();
             return null;
         } finally {
-            db.DB.closeResultSet(rs);
-            db.DB.closeStatement(st);
-            db.DB.closeConnection();
+            DB.closeResultSet(rs);
+            DB.closeStatement(st);
         }
     }
-    public void create(Usuario usuario) {
-        String sql = "INSERT INTO Usuario (nome, cpf, senha_hash, telefone, data_nascimento) VALUES (?, ?, ?, ?, ?)";
-        try (Connection conn = db.DB.getConnection();
-             PreparedStatement st = conn.prepareStatement(sql)) {
 
+    public void create(Connection conn, Usuario usuario) {
+        String sql = "INSERT INTO Usuario (nome, cpf, senha_hash, telefone, data_nascimento) VALUES (?, ?, ?, ?, ?)";
+        PreparedStatement st = null;
+        ResultSet rs = null;
+
+        try {
+            st = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
             st.setString(1, usuario.getNome());
             st.setString(2, usuario.getCpf());
             st.setString(3, usuario.getSenhaHash());
@@ -50,48 +48,21 @@ public class UsuarioDAO {
             st.setDate(5, Date.valueOf(usuario.getDataNascimento()));
 
             st.executeUpdate();
-            System.out.println("Conta criada com sucesso!");
 
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-    }
-
-    public Usuario login(String cpf, String senha) {
-        Connection conn = null;
-        PreparedStatement st = null;
-        ResultSet rs = null;
-
-        try {
-            conn = db.DB.getConnection();
-            st = conn.prepareStatement("SELECT * FROM Usuario WHERE cpf = ?");
-            st.setString(1, cpf);
-            rs = st.executeQuery();
-
+            rs = st.getGeneratedKeys();
             if (rs.next()) {
-                String senhaHash = rs.getString("senha_hash");
-
-                if (HashUtil.verifyPassword(senha, senhaHash)) {
-                    return new Usuario(
-                            rs.getInt("id"),
-                            rs.getString("nome"),
-                            rs.getString("cpf"),
-                            senhaHash,
-                            rs.getString("telefone"),
-                            rs.getDate("data_nascimento").toLocalDate()
-                    );
-                }
+                usuario.setId(rs.getInt(1));
             }
-            return null;
 
         } catch (SQLException e) {
             e.printStackTrace();
-            return null;
         } finally {
-            db.DB.closeResultSet(rs);
-            db.DB.closeStatement(st);
-            db.DB.closeConnection();
+            DB.closeResultSet(rs);
+            DB.closeStatement(st);
         }
     }
+
+
 }
+
 

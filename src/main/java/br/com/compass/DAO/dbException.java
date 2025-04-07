@@ -1,4 +1,4 @@
-package br.com.compass.DB;
+package br.com.compass.DAO;
 
 
 import java.io.Serial;

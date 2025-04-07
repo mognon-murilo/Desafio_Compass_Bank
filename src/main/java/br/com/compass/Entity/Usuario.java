@@ -11,16 +11,27 @@ public class Usuario {
     private String senhaHash;
     //private Permissao permissao;
 
-
-    public Usuario(int id, String nome, String cpf, String senhaHash, String telefone, LocalDate dataNascimento) {
-        this.id = id;
+    public Usuario(String nome, String cpf, String senhaHash, String telefone, LocalDate dataNascimento) {
         this.nome = nome;
         this.cpf = cpf;
         this.dataNascimento = dataNascimento;
         this.telefone = telefone;
         this.senhaHash = senhaHash;
     }
+    public Usuario(int id, String nome, String cpf, String senhaHash, String telefone, LocalDate dataNascimento) {
+        this.id = id;
+        this.nome = nome;
+        this.cpf = cpf;
+        this.senhaHash = senhaHash;
+        this.telefone = telefone;
+        this.dataNascimento = dataNascimento;
+    }
+    public Usuario(int id) {
+        this.id = id;
+    }
+    public Usuario(){
 
+    }
     public String getCpf() {
         return cpf;
     }

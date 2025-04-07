@@ -1,80 +1,118 @@
 package br.com.compass;
 
+import br.com.compass.DAO.ContaDAO;
 import br.com.compass.DAO.UsuarioDAO;
+import br.com.compass.Entity.Conta;
 import br.com.compass.Entity.Usuario;
 import org.mindrot.jbcrypt.BCrypt;
+import br.com.compass.DAO.DB;
+import br.com.compass.DAO.dbException;
+
+import java.math.BigDecimal;
+import java.sql.Connection;
+import java.sql.SQLException;
 import java.time.LocalDate;
 import java.util.Scanner;
 
+
 public class App {
-
-
+    private static final UsuarioDAO usuarioDAO = new UsuarioDAO();
+    private static final ContaDAO contaDAO = new ContaDAO();
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        mainMenu(scanner);
-        scanner.close();
-        System.out.println("Application closed");
+        try {
+            mainMenu(scanner);
+        } finally {
+            DB.closeConnection();
+            scanner.close();
+            System.out.println("Application closed.");
+        }
     }
 
     public static void registrarUsuario(Scanner scanner) {
-        UsuarioDAO usuarioDAO = new UsuarioDAO();
+        Connection conn = null;
+        try {
+            conn = DB.getConnection();
 
-        System.out.println("===== Register New Account =====");
-        System.out.print("Nome: ");
-        String nome = scanner.nextLine();
-
-        System.out.print("CPF: ");
-        String cpf = scanner.nextLine();
-
-        System.out.print("Telefone: ");
-        String telefone = scanner.nextLine();
-
-        System.out.print("Data de Nascimento (YYYY-MM-DD): ");
-        LocalDate dataNascimento = LocalDate.parse(scanner.nextLine());
-
-        System.out.print("Senha: ");
-        String senha = scanner.nextLine();
-
-
-        String senhaHash = BCrypt.hashpw(senha, BCrypt.gensalt());
-
-        Usuario usuario = new Usuario(0,nome, cpf, senhaHash, telefone, dataNascimento);
-        usuarioDAO.create(usuario);
-    }
-
-    public static void loginUsuario(Scanner scanner) {
-        UsuarioDAO usuarioDAO = new UsuarioDAO();
-
-        System.out.println("===== Login =====");
-        System.out.print("CPF: ");
-        String cpf = scanner.nextLine();
-
-        Usuario usuario = usuarioDAO.findByCpf(cpf);
-
-        if (usuario == null) {
-            System.out.println("Usuário não encontrado.");
-            return;
-        }
-
-        int tentativas = 0;
-        while (tentativas < 3) {
-            System.out.print("Senha: ");
+            System.out.println("Nome: ");
+            String nome = scanner.nextLine();
+            System.out.println("CPF: ");
+            String cpf = scanner.nextLine();
+            System.out.println("Telefone: ");
+            String telefone = scanner.nextLine();
+            System.out.println("Data de Nascimento: ");
+            String dataNascimento = scanner.nextLine();
+            System.out.println("Tipo de Conta (Corrente/Poupanca): ");
+            String tipoConta = scanner.nextLine();
+            System.out.println("Senha: ");
             String senha = scanner.nextLine();
 
-            if (BCrypt.checkpw(senha, usuario.getSenhaHash())) {
-                System.out.println("Login efetuado com sucesso! Bem-vindo, " + usuario.getNome() + "!");
-                return;
-            } else {
-                tentativas++;
-                System.out.println("Senha incorreta. Tentativa " + tentativas + "/3.");
-            }
+            String senhaHash = BCrypt.hashpw(senha, BCrypt.gensalt());
+
+            Usuario usuario = new Usuario(nome, cpf, senhaHash, telefone, LocalDate.parse(dataNascimento));
+            usuarioDAO.create(conn, usuario);
+
+            Conta conta = new Conta(nome, cpf, telefone, dataNascimento, tipoConta, senhaHash);
+            contaDAO.inserir(conn, conta);
+
+            System.out.println("Usuário e conta criados com sucesso!");
+
+        } catch (dbException e) {
+            e.printStackTrace();
+        } finally {
+            DB.closeConnection();
         }
-        System.out.println("Conta bloqueada. Procure um gerente para desbloquear.");
+    }
+
+
+    public static void loginUsuario(Scanner scanner) {
+        Connection conn = null;
+        try {
+            conn = DB.getConnection();
+
+            System.out.println("===== Login =====");
+            System.out.print("CPF: ");
+            String cpf = scanner.nextLine();
+
+            Usuario usuario = usuarioDAO.findByCpf(conn, cpf);
+
+            if (usuario == null) {
+                System.out.println("Usuário não encontrado.");
+                return;
+            }
+
+            int tentativas = 0;
+            while (tentativas < 3) {
+                System.out.print("Senha: ");
+                String senha = scanner.nextLine();
+
+                if (BCrypt.checkpw(senha, usuario.getSenhaHash())) {
+                    System.out.println("Login efetuado com sucesso! Bem-vindo, " + usuario.getNome() + "!");
+
+                    Conta conta = contaDAO.findByCpf(conn, cpf);
+                    if (conta == null) {
+                        System.out.println("Conta não encontrada para o CPF informado.");
+                        return;
+                    }
+
+                    bankMenu(scanner, conta);
+                    return;
+                } else {
+                    tentativas++;
+                    System.out.println("Senha incorreta. Tentativa " + tentativas + "/3.");
+                }
+            }
+            System.out.println("Conta bloqueada. Procure um gerente para desbloquear.");
+
+        } catch (dbException e) {
+            e.printStackTrace();
+        } finally {
+            DB.closeConnection();
+        }
     }
 
     public static void mainMenu(Scanner scanner) {
-        UsuarioDAO usuarioDAO = new UsuarioDAO();
         boolean running = true;
 
         while (running) {
@@ -86,7 +124,7 @@ public class App {
             System.out.print("Choose an option: ");
 
             int option = scanner.nextInt();
-            scanner.nextLine(); // Consumir nova linha
+            scanner.nextLine(); // Limpar buffer
 
             switch (option) {
                 case 1:
@@ -104,7 +142,7 @@ public class App {
         }
     }
 
-    public static void bankMenu(Scanner scanner) {
+    public static void bankMenu(Scanner scanner, Conta conta) {
         boolean running = true;
 
         while (running) {
@@ -112,39 +150,48 @@ public class App {
             System.out.println("|| 1. Deposit              ||");
             System.out.println("|| 2. Withdraw             ||");
             System.out.println("|| 3. Check Balance        ||");
-            System.out.println("|| 4. Transfer             ||");
-            System.out.println("|| 5. Bank Statement       ||");
             System.out.println("|| 0. Exit                 ||");
             System.out.println("=============================");
             System.out.print("Choose an option: ");
 
             int option = scanner.nextInt();
+            scanner.nextLine(); // Limpar buffer
 
-            switch (option) {
-                case 1:
-                    System.out.println("Deposit.");
-                    break;
-                case 2:
-                    System.out.println("Withdraw.");
-                    break;
-                case 3:
-                    System.out.println("Check Balance.");
-                    break;
-                case 4:
-                    System.out.println("Transfer.");
-                    break;
-                case 5:
-                    System.out.println("Bank Statement.");
-                    break;
-                case 0:
-                    System.out.println("Exiting...");
-                    running = false;
-                    return;
-                default:
-                    System.out.println("Invalid option! Please try again.");
+
+            Connection conn = null;
+            try {
+                conn = DB.getConnection();
+                switch (option) {
+                    case 1:
+                        System.out.print("Valor para depósito: ");
+                        BigDecimal valorDeposito = scanner.nextBigDecimal();
+                        scanner.nextLine();
+                        contaDAO.depositar(conn, conta, valorDeposito);
+                        System.out.println("Depósito realizado com sucesso.");
+                        break;
+                    case 2:
+                        System.out.print("Valor para saque: ");
+                        BigDecimal valorSaque = scanner.nextBigDecimal();
+                        scanner.nextLine();
+                        if (contaDAO.sacar(conn, conta, valorSaque)) {
+                            System.out.println("Saque realizado com sucesso.");
+                        } else {
+                            System.out.println("Saque não realizado: saldo insuficiente.");
+                        }
+                        break;
+                    case 3:
+                        System.out.println("Saldo atual: " + conta.getSaldo());
+                        break;
+                    case 0:
+                        System.out.println("Saindo do menu bancário...");
+                        running = false;
+                        break;
+                    default:
+                        System.out.println("Invalid option! Please try again.");
+                }
+            } finally {
+                DB.closeConnection();
             }
         }
     }
 }
-
-
