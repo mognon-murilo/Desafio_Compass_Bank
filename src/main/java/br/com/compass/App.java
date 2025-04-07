@@ -2,43 +2,16 @@ package br.com.compass;
 
 import br.com.compass.DAO.UsuarioDAO;
 import br.com.compass.Entity.Usuario;
-import br.com.compass.util.HashUtil;
 import org.mindrot.jbcrypt.BCrypt;
-
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.time.LocalDate;
 import java.util.Scanner;
 
 public class App {
 
-    public static void dbconnect(){
-        Connection conn = null;
-        Statement st = null;
-        ResultSet rs = null;
-        try {
-            conn = db.DB.getConnection();
-            st = conn.createStatement();
-            rs = st.executeQuery("select * from usuario");
-            while (rs.next()){
-                System.out.println(rs.getInt("id") + ", " + rs.getString("nome"));
-            }
-        }
-        catch (SQLException e){
-            e.printStackTrace();
-        }
-        finally {
-            db.DB.closeResultSet(rs);
-            db.DB.closeStatement(st);
-            db.DB.closeConnection();
-        }
-    }
+
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
-        dbconnect();
         mainMenu(scanner);
         scanner.close();
         System.out.println("Application closed");
