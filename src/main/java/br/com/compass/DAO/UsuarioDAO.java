@@ -1,40 +1,90 @@
 package br.com.compass.DAO;
 
 import br.com.compass.Entity.Usuario;
+import br.com.compass.util.HashUtil;
 
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
 public class UsuarioDAO {
-    public List<Usuario> findAll(){
-        List<Usuario> lista = new ArrayList<>();
+    public Usuario findByCpf(String cpf) {
         Connection conn = null;
-        Statement st = null;
+        PreparedStatement st = null;
+        ResultSet rs = null;
+        try {
+            conn = db.DB.getConnection();
+            st = conn.prepareStatement("SELECT * FROM Usuario WHERE cpf = ?");
+            st.setString(1, cpf);
+            rs = st.executeQuery();
+
+            if (rs.next()) {
+                return new Usuario(
+                        rs.getInt("id"),
+                        rs.getString("nome"),
+                        rs.getString("cpf"),
+                        rs.getString("senha_hash"),
+                        rs.getString("telefone"),
+                        rs.getDate("data_nascimento").toLocalDate()
+                );
+            }
+            return null;
+        } catch (SQLException e) {
+            e.printStackTrace();
+            return null;
+        } finally {
+            db.DB.closeResultSet(rs);
+            db.DB.closeStatement(st);
+            db.DB.closeConnection();
+        }
+    }
+    public void create(Usuario usuario) {
+        String sql = "INSERT INTO Usuario (nome, cpf, senha_hash, telefone, data_nascimento) VALUES (?, ?, ?, ?, ?)";
+        try (Connection conn = db.DB.getConnection();
+             PreparedStatement st = conn.prepareStatement(sql)) {
+
+            st.setString(1, usuario.getNome());
+            st.setString(2, usuario.getCpf());
+            st.setString(3, usuario.getSenhaHash());
+            st.setString(4, usuario.getTelefone());
+            st.setDate(5, Date.valueOf(usuario.getDataNascimento()));
+
+            st.executeUpdate();
+            System.out.println("Conta criada com sucesso!");
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public Usuario login(String cpf, String senha) {
+        Connection conn = null;
+        PreparedStatement st = null;
         ResultSet rs = null;
 
         try {
             conn = db.DB.getConnection();
-            st = conn.createStatement();
-            rs = st.executeQuery("SELECT * FROM Usuario");
+            st = conn.prepareStatement("SELECT * FROM Usuario WHERE cpf = ?");
+            st.setString(1, cpf);
+            rs = st.executeQuery();
 
-            while(rs.next()){
-                Usuario usuario = new Usuario(
-                        rs.getInt("Id"),
-                        rs.getString("Nome"),
-                        rs.getString("Cpf"),
-                        rs.getString("Senha"),
-                        rs.getString("telefone"),
-                        rs.getDate("DataNascimento").toLocalDate()
+            if (rs.next()) {
+                String senhaHash = rs.getString("senha_hash");
 
-                );
-                lista.add(usuario);
+                if (HashUtil.verifyPassword(senha, senhaHash)) {
+                    return new Usuario(
+                            rs.getInt("id"),
+                            rs.getString("nome"),
+                            rs.getString("cpf"),
+                            senhaHash,
+                            rs.getString("telefone"),
+                            rs.getDate("data_nascimento").toLocalDate()
+                    );
+                }
             }
-            return lista;
-        } catch(SQLException e) {
+            return null;
+
+        } catch (SQLException e) {
             e.printStackTrace();
             return null;
         } finally {
@@ -44,3 +94,4 @@ public class UsuarioDAO {
         }
     }
 }
+

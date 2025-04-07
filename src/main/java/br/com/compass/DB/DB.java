@@ -28,11 +28,13 @@ public class DB {
         if (conn != null) {
             try {
                 conn.close();
+                conn = null;
             } catch (SQLException e) {
                 throw new dbException(e.getMessage());
             }
         }
     }
+
 
     private static Properties loadProperties() {
         try (FileInputStream fs = new FileInputStream("db.properties")) {

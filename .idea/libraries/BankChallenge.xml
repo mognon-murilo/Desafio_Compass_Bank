@@ -2,6 +2,7 @@
   <library name="BankChallenge">
     <CLASSES>
       <root url="jar://$PROJECT_DIR$/../../mysql-connector-j-9.2.0.jar!/" />
+      <root url="jar://$PROJECT_DIR$/../../jbcrypt-0.4.jar!/" />
     </CLASSES>
     <JAVADOC />
     <SOURCES>
