@@ -12,13 +12,13 @@ public class Usuario {
     //private Permissao permissao;
 
 
-    public Usuario(String cpf, LocalDate dataNascimento, int id, String nome, String senhaHash, String telefone) {
-        this.cpf = cpf;
-        this.dataNascimento = dataNascimento;
+    public Usuario(int id, String nome, String cpf, String senhaHash, String telefone, LocalDate dataNascimento) {
         this.id = id;
         this.nome = nome;
-        this.senhaHash = senhaHash;
+        this.cpf = cpf;
+        this.dataNascimento = dataNascimento;
         this.telefone = telefone;
+        this.senhaHash = senhaHash;
     }
 
     public String getCpf() {

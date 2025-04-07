@@ -25,6 +25,13 @@ public class Conta {
         this.bloqueada = false;
         this.tentativasLogin = 0;
     }
+    public Conta(int id) {
+        this.id = id;
+    }
+
+    public Conta(){
+
+    }
 
     public boolean isBloqueada() {
         return bloqueada;
