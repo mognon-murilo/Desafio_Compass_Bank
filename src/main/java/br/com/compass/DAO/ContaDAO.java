@@ -4,8 +4,52 @@ import br.com.compass.Entity.Conta;
 
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDateTime;
 
 public class ContaDAO {
+    public Conta findById(Connection conn, int id) {
+        PreparedStatement st = null;
+        ResultSet rs = null;
+
+        try {
+            st = conn.prepareStatement("SELECT * FROM Conta WHERE Id = ?");
+            st.setInt(1, id);
+            rs = st.executeQuery();
+
+            if (rs.next()) {
+                Conta conta = new Conta();
+                conta.setId(rs.getInt("Id"));
+                conta.setNome(rs.getString("Nome"));
+                conta.setCpf(rs.getString("Cpf"));
+                conta.setTelefone(rs.getString("Telefone"));
+                conta.setDataNascimento(rs.getString("data_nascimento"));
+                conta.setTipoConta(rs.getString("tipo_conta"));
+                conta.setSenhaHash(rs.getString("Senha_Hash"));
+                conta.setSaldo(rs.getBigDecimal("saldo"));
+                conta.setBloqueada(rs.getBoolean("bloqueada"));
+                conta.setTentativasLogin(rs.getInt("tentativas_login"));
+                return conta;
+            }
+            return null;
+
+        } catch (SQLException e) {
+            throw new dbException(e.getMessage());
+        } finally {
+            DB.closeResultSet(rs);
+            DB.closeStatement(st);
+        }
+    }
+    public Conta findById(int id) {
+        Connection conn = null;
+        try {
+            conn = DB.getConnection();
+            return findById(conn, id);
+        } finally {
+            DB.closeConnection();
+        }
+    }
+
+
 
     public Conta findByCpf(Connection conn, String cpf) {
         PreparedStatement st = null;
@@ -24,6 +68,7 @@ public class ContaDAO {
                         rs.getString("tipo_conta"),
                         rs.getString("senha_hash")
                 );
+                conta.setId(rs.getInt("id"));
                 conta.setSaldo(rs.getBigDecimal("saldo"));
                 conta.setBloqueada(rs.getBoolean("bloqueada"));
                 conta.setTentativasLogin(rs.getInt("tentativas_login"));

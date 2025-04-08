@@ -7,7 +7,7 @@ import br.com.compass.Entity.Usuario;
 import org.mindrot.jbcrypt.BCrypt;
 import br.com.compass.DAO.DB;
 import br.com.compass.DAO.dbException;
-
+import br.com.compass.DAO.TransacaoDAO;
 import java.math.BigDecimal;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -24,7 +24,6 @@ public class App {
         try {
             mainMenu(scanner);
         } finally {
-            DB.closeConnection();
             scanner.close();
             System.out.println("Application closed.");
         }
@@ -144,12 +143,14 @@ public class App {
 
     public static void bankMenu(Scanner scanner, Conta conta) {
         boolean running = true;
-
+        ContaDAO contaDAO = new ContaDAO();
+        TransacaoDAO transacaoDAO = new TransacaoDAO();
         while (running) {
             System.out.println("========= Bank Menu =========");
             System.out.println("|| 1. Deposit              ||");
             System.out.println("|| 2. Withdraw             ||");
             System.out.println("|| 3. Check Balance        ||");
+            System.out.println("|| 4. Transfer        ||");
             System.out.println("|| 0. Exit                 ||");
             System.out.println("=============================");
             System.out.print("Choose an option: ");
@@ -181,6 +182,20 @@ public class App {
                         break;
                     case 3:
                         System.out.println("Saldo atual: " + conta.getSaldo());
+                        break;
+                    case 4:
+                        System.out.print("Digite o ID da conta destino: ");
+                        int idContaDestino = scanner.nextInt();
+
+                        System.out.print("Digite o valor para transferir: ");
+                        BigDecimal valorTransferencia = scanner.nextBigDecimal();
+
+                        transacaoDAO.transferir(conn, conta, idContaDestino, valorTransferencia);
+
+
+                        conta = contaDAO.findById(conn, conta.getId());
+
+
                         break;
                     case 0:
                         System.out.println("Saindo do menu bancário...");
