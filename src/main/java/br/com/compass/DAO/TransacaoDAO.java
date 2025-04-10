@@ -13,6 +13,18 @@ public class TransacaoDAO {
 
 
     private ContaDAO contaDAO = new ContaDAO();
+    public void solicitarEstorno(Connection conn, int idTransacao, String cpfSolicitante) {
+        String sql = "INSERT INTO estornos (id_transacao, cpf_solicitante, status) VALUES (?, ?, 'PENDENTE')";
+
+        try (PreparedStatement st = conn.prepareStatement(sql)) {
+            st.setInt(1, idTransacao);
+            st.setString(2, cpfSolicitante);
+            st.executeUpdate();
+            System.out.println("Solicitação de estorno realizada com sucesso.");
+        } catch (SQLException e) {
+            throw new dbException("Erro ao solicitar estorno: " + e.getMessage());
+        }
+    }
 
     public void transferir(Connection conn, Conta contaOrigem, int idContaDestino, BigDecimal valor) {
         ContaDAO contaDAO = new ContaDAO();

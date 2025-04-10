@@ -9,22 +9,24 @@ public class Usuario {
     private String telefone;
     private LocalDate dataNascimento;
     private String senhaHash;
-    //private Permissao permissao;
+    private String tipo;
 
-    public Usuario(String nome, String cpf, String senhaHash, String telefone, LocalDate dataNascimento) {
+    public Usuario(String nome, String cpf, String senhaHash, String telefone, LocalDate dataNascimento,String tipo) {
         this.nome = nome;
         this.cpf = cpf;
         this.dataNascimento = dataNascimento;
         this.telefone = telefone;
         this.senhaHash = senhaHash;
+        this.tipo = tipo;
     }
-    public Usuario(int id, String nome, String cpf, String senhaHash, String telefone, LocalDate dataNascimento) {
+    public Usuario(int id, String nome, String cpf, String senhaHash, String telefone, LocalDate dataNascimento,String tipo) {
         this.id = id;
         this.nome = nome;
         this.cpf = cpf;
         this.senhaHash = senhaHash;
         this.telefone = telefone;
         this.dataNascimento = dataNascimento;
+        this.tipo = tipo;
     }
     public Usuario(int id) {
         this.id = id;
@@ -32,6 +34,15 @@ public class Usuario {
     public Usuario(){
 
     }
+
+    public String getTipo() {
+        return tipo;
+    }
+
+    public void setTipo(String tipo) {
+        this.tipo = tipo;
+    }
+
     public String getCpf() {
         return cpf;
     }

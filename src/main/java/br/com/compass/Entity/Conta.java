@@ -1,6 +1,7 @@
 package br.com.compass.Entity;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 
 public class Conta {
 
@@ -8,15 +9,15 @@ public class Conta {
     private String nome;
     private String cpf;
     private String telefone;
-    private String dataNascimento;
+    private LocalDate dataNascimento;
     private String tipoConta;
     private String senhaHash;
     private BigDecimal    saldo;
     private boolean bloqueada;
-    private int tentativasLogin;
 
 
-    public Conta(String nome, String cpf, String telefone, String dataNascimento, String tipoConta, String senhaHash) {
+
+    public Conta(String nome, String cpf, String telefone, LocalDate dataNascimento, String tipoConta, String senhaHash) {
         this.nome = nome;
         this.cpf = cpf;
         this.telefone = telefone;
@@ -25,7 +26,7 @@ public class Conta {
         this.senhaHash = senhaHash;
         this.saldo = BigDecimal.valueOf(0.0);
         this.bloqueada = false;
-        this.tentativasLogin = 0;
+
     }
     public Conta(int id) {
         this.id = id;
@@ -72,12 +73,12 @@ public class Conta {
         this.cpf = cpf;
     }
 
-    public String getDataNascimento() {
+    public LocalDate getDataNascimento() {
         return dataNascimento;
     }
 
     public void setDataNascimento(String dataNascimento) {
-        this.dataNascimento = dataNascimento;
+        this.dataNascimento = LocalDate.parse(dataNascimento);
     }
 
     public int getId() {
@@ -121,14 +122,7 @@ public class Conta {
         this.telefone = telefone;
     }
 
-    public int getTentativasLogin() {
-        return tentativasLogin;
-    }
 
-    public void setTentativasLogin(int tentativasLogin) {
-
-        this.tentativasLogin = tentativasLogin;
-    }
 
     public String getTipoConta() {
         return tipoConta;

@@ -10,6 +10,10 @@ public class Transacao {
     private String tipo;
     private BigDecimal valor;
     private LocalDateTime dataHora;
+    private String statusEstorno; // PENDENTE, APROVADO, RECUSADO
+    private String motivoEstorno; // texto livre do usuário
+    private LocalDateTime dataSolicitacaoEstorno;
+    private LocalDateTime dataRespostaEstorno;
 
     public Transacao(Conta contaDestino, Conta contaOrigem, LocalDateTime dataHora, int id, String tipo, BigDecimal valor) {
         this.contaDestino = contaDestino;
