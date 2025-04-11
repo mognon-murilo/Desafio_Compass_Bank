@@ -3,6 +3,7 @@ package br.com.compass.DAO;
 import br.com.compass.Entity.Conta;
 import java.math.BigDecimal;
 import java.sql.*;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -21,6 +22,7 @@ public class ContaDAO {
         conta.setBloqueada(rs.getBoolean("bloqueada"));
         return conta;
     }
+
 
     public Conta findById(Connection conn, int id) {
         String sql = "SELECT * FROM Conta WHERE Id = ?";
@@ -101,24 +103,36 @@ public class ContaDAO {
     }
 
     public void atualizarSaldo(Connection conn, Conta conta) {
-        String sql = "UPDATE conta SET saldo = ? WHERE cpf = ?";
+        String sql = "UPDATE Conta SET saldo = ? WHERE Id = ?";
         try (PreparedStatement st = conn.prepareStatement(sql)) {
             st.setBigDecimal(1, conta.getSaldo());
-            st.setString(2, conta.getCpf());
+            st.setInt(2, conta.getId());
             st.executeUpdate();
         } catch (SQLException e) {
             throw new dbException("Erro ao atualizar saldo: " + e.getMessage());
         }
     }
 
-    public void depositar(Connection conn, Conta conta, BigDecimal valor) {
-        try {
-            conta.depositar(valor);
-            atualizarSaldo(conn, conta);
-        } catch (IllegalArgumentException e) {
-            System.out.println("Erro no depósito: " + e.getMessage());
+    public void depositar(Connection conn, Conta conta, BigDecimal valor) throws SQLException {
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Valor inválido para depósito.");
+        }
+
+        conta.depositar(valor);  // Atualiza em memória
+        atualizarSaldo(conn, conta);  // Atualiza no Banco
+
+        // Registrar transação
+        String sql = "INSERT INTO transacoes (conta_origem_id, tipo, valor, data_hora) VALUES (?, ?, ?, ?)";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, conta.getId());
+            stmt.setString(2, "DEPOSITO");
+            stmt.setBigDecimal(3, valor);
+            stmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
+            stmt.executeUpdate();
         }
     }
+
     public void bloquearConta(Connection conn, String cpf) {
         String sql = "UPDATE conta SET bloqueada = true WHERE cpf = ?";
         try (PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -129,15 +143,30 @@ public class ContaDAO {
         }
     }
 
-    public boolean sacar(Connection conn, Conta conta, BigDecimal valor) {
-        try {
-            conta.sacar(valor);
-            atualizarSaldo(conn, conta);
-            return true;
-        } catch (IllegalArgumentException e) {
-            System.out.println("Erro no saque: " + e.getMessage());
+    public boolean sacar(Connection conn, Conta conta, BigDecimal valor) throws SQLException {
+        if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Valor inválido para saque.");
+        }
+        if (conta.getSaldo().compareTo(valor) < 0) {
+            System.out.println("Saldo insuficiente.");
             return false;
         }
+
+        conta.sacar(valor);  // Atualiza em memória
+        atualizarSaldo(conn, conta);  // Atualiza no banco
+
+        // Registrar transação
+        String sql = "INSERT INTO transacoes (conta_origem_id, tipo, valor, data_hora) VALUES (?, ?, ?, ?)";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setInt(1, conta.getId());
+            stmt.setString(2, "SAQUE");
+            stmt.setBigDecimal(3, valor);
+            stmt.setTimestamp(4, Timestamp.valueOf(LocalDateTime.now()));
+            stmt.executeUpdate();
+        }
+
+        return true;
     }
 }
 

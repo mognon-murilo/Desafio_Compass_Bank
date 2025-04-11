@@ -11,17 +11,47 @@ public class Transacao {
     private BigDecimal valor;
     private LocalDateTime dataHora;
     private String statusEstorno; // PENDENTE, APROVADO, RECUSADO
-    private String motivoEstorno; // texto livre do usuário
+    private String motivo_solicitacao_estorno;
+    private String motivo_recusa_estorno;// texto livre do usuário
     private LocalDateTime dataSolicitacaoEstorno;
     private LocalDateTime dataRespostaEstorno;
 
-    public Transacao(Conta contaDestino, Conta contaOrigem, LocalDateTime dataHora, int id, String tipo, BigDecimal valor) {
-        this.contaDestino = contaDestino;
-        this.contaOrigem = contaOrigem;
-        this.dataHora = dataHora;
+    // Construtor Completo
+    public Transacao(int id, Conta contaOrigem, Conta contaDestino, String tipo, BigDecimal valor, LocalDateTime dataHora,
+                     String statusEstorno, String motivo_solicitacao_estorno,String motivo_recusa_estorno, LocalDateTime dataSolicitacaoEstorno, LocalDateTime dataRespostaEstorno) {
         this.id = id;
+        this.contaOrigem = contaOrigem;
+        this.contaDestino = contaDestino;
         this.tipo = tipo;
         this.valor = valor;
+        this.dataHora = dataHora;
+        this.statusEstorno = statusEstorno;
+        this.motivo_solicitacao_estorno = motivo_solicitacao_estorno;
+        this.motivo_recusa_estorno = motivo_recusa_estorno;
+        this.dataSolicitacaoEstorno = dataSolicitacaoEstorno;
+        this.dataRespostaEstorno = dataRespostaEstorno;
+    }
+
+    // Construtor Resumido (transferência ou depósito)
+    public Transacao(Conta contaOrigem, Conta contaDestino, String tipo, BigDecimal valor, LocalDateTime dataHora) {
+        this.contaOrigem = contaOrigem;
+        this.contaDestino = contaDestino;
+        this.tipo = tipo;
+        this.valor = valor;
+        this.dataHora = dataHora;
+    }
+    public Transacao(){
+
+    }
+
+
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public Conta getContaOrigem() {
@@ -32,20 +62,20 @@ public class Transacao {
         this.contaOrigem = contaOrigem;
     }
 
-    public LocalDateTime getDataHora() {
-        return dataHora;
+    public String getMotivo_recusa_estorno() {
+        return motivo_recusa_estorno;
     }
 
-    public void setDataHora(LocalDateTime dataHora) {
-        this.dataHora = dataHora;
+    public void setMotivo_recusa_estorno(String motivo_recusa_estorno) {
+        this.motivo_recusa_estorno = motivo_recusa_estorno;
     }
 
-    public int getId() {
-        return id;
+    public Conta getContaDestino() {
+        return contaDestino;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public void setContaDestino(Conta contaDestino) {
+        this.contaDestino = contaDestino;
     }
 
     public String getTipo() {
@@ -64,11 +94,43 @@ public class Transacao {
         this.valor = valor;
     }
 
-    public Conta getContaDestino() {
-        return contaDestino;
+    public LocalDateTime getDataHora() {
+        return dataHora;
     }
 
-    public void setContaDestino(Conta contaDestino) {
-        this.contaDestino = contaDestino;
+    public void setDataHora(LocalDateTime dataHora) {
+        this.dataHora = dataHora;
+    }
+
+    public String getStatusEstorno() {
+        return statusEstorno;
+    }
+
+    public void setStatusEstorno(String statusEstorno) {
+        this.statusEstorno = statusEstorno;
+    }
+
+    public String getMotivo_solicitacao_estorno() {
+        return motivo_solicitacao_estorno;
+    }
+
+    public void setMotivo_solicitacao_estorno(String motivo_solicitacao_estorno) {
+        this.motivo_solicitacao_estorno = motivo_solicitacao_estorno;
+    }
+
+    public LocalDateTime getDataSolicitacaoEstorno() {
+        return dataSolicitacaoEstorno;
+    }
+
+    public void setDataSolicitacaoEstorno(LocalDateTime dataSolicitacaoEstorno) {
+        this.dataSolicitacaoEstorno = dataSolicitacaoEstorno;
+    }
+
+    public LocalDateTime getDataRespostaEstorno() {
+        return dataRespostaEstorno;
+    }
+
+    public void setDataRespostaEstorno(LocalDateTime dataRespostaEstorno) {
+        this.dataRespostaEstorno = dataRespostaEstorno;
     }
 }

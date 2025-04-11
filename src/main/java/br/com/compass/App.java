@@ -6,12 +6,17 @@ import br.com.compass.DAO.TransacaoDAO;
 import br.com.compass.DAO.UsuarioDAO;
 import br.com.compass.DAO.dbException;
 import br.com.compass.Entity.Conta;
+import br.com.compass.Entity.Transacao;
 import br.com.compass.Entity.Usuario;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Scanner;
 
@@ -22,6 +27,7 @@ public class App {
     private static final TransacaoDAO transacaoDAO = new TransacaoDAO();
     private static final Conta conta = new Conta();
     private static final Usuario usuario = new Usuario();
+
 
     public static void main(String[] args) {
         Scanner scanner = new Scanner(System.in);
@@ -231,20 +237,87 @@ public class App {
             DB.closeConnection();
         }
     }
-    public static void solicitarEstorno(Scanner scanner, Usuario usuarioLogado) {
-        Connection conn = null;
+    public void solicitarEstorno(Connection conn, int idTransacao, String motivoSolicitacao) throws SQLException {
+        Transacao transacao = transacaoDAO.findById(conn, idTransacao);
 
+        if (transacao == null) {
+            System.out.println("Transação não encontrada.");
+            return;
+        }
+
+        if (transacao.getStatusEstorno() != null && transacao.getStatusEstorno().equalsIgnoreCase("APROVADO")) {
+            System.out.println("Estorno já foi aprovado. Não é possível solicitar novamente.");
+            return;
+        }
+
+        String sql = "UPDATE transacoes SET status_estorno = 'PENDENTE', motivo_solicitacao_estorno = ?, data_solicitacao_estorno = ? WHERE id = ?";
+
+        try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+            stmt.setString(1, motivoSolicitacao);
+            stmt.setTimestamp(2, Timestamp.valueOf(LocalDateTime.now()));
+            stmt.setInt(3, idTransacao);
+            stmt.executeUpdate();
+        }
+
+        System.out.println("Estorno solicitado com sucesso! Aguardando aprovação do gerente.");
+    }
+
+
+    // Menu de aprovação ou recusa de estornos (Gerente)
+    private static void menuEstornosGerente(Scanner scanner) {
+        Connection conn = null;
         try {
             conn = DB.getConnection();
 
-            System.out.println("===== Solicitar Estorno =====");
-            System.out.print("Informe o ID da transação que deseja estornar: ");
-            int idTransacao = Integer.parseInt(scanner.nextLine());
+            List<Transacao> estornosPendentes = transacaoDAO.buscarTransacoesPendentesEstorno(conn);
 
-            transacaoDAO.solicitarEstorno(conn, idTransacao, usuarioLogado.getCpf());
+            if (estornosPendentes.isEmpty()) {
+                System.out.println("Não há solicitações de estorno pendentes.");
+                return;
+            }
 
-        } catch (dbException e) {
-            throw new dbException("Erro: " + e.getMessage());
+            System.out.println("\n===== Estornos Pendentes =====");
+            for (Transacao t : estornosPendentes) {
+                System.out.println("ID Transação: " + t.getId() +
+                        " | Valor: " + t.getValor() +
+                        " | Tipo: " + t.getTipo() +
+                        " | Conta Origem ID: " + t.getContaOrigem().getId());
+            }
+
+            System.out.print("Digite o ID da transação para análise (ou 0 para cancelar): ");
+            int idTransacao = scanner.nextInt();
+            scanner.nextLine(); // limpar buffer
+
+            if (idTransacao == 0) {
+                System.out.println("Operação cancelada.");
+                return;
+            }
+
+            Transacao transacaoSelecionada = transacaoDAO.findById(conn, idTransacao);
+
+            if (transacaoSelecionada == null) {
+                System.out.println("Transação não encontrada.");
+                return;
+            }
+
+            System.out.println("1 - Aprovar Estorno");
+            System.out.println("2 - Recusar Estorno");
+            System.out.print("Escolha: ");
+            int escolha = scanner.nextInt();
+            scanner.nextLine(); // limpar buffer
+
+            if (escolha == 1) {
+                transacaoDAO.aprovarEstorno(conn, idTransacao);
+            } else if (escolha == 2) {
+                System.out.print("Digite o motivo da recusa: ");
+                String motivo = scanner.nextLine();
+                transacaoDAO.recusarEstorno(conn, idTransacao, motivo);
+            } else {
+                System.out.println("Opção inválida.");
+            }
+
+        } catch (SQLException e) {
+            throw new dbException("Erro no menu de estornos: " + e.getMessage());
         } finally {
             DB.closeConnection();
         }
@@ -260,6 +333,7 @@ public class App {
             System.out.println("|| 2. Register New Manager    ||");
             System.out.println("|| 3. Account Opening         ||");
             System.out.println("|| 4. Unblock Accounts         ||");
+            System.out.println("|| 5. Approve/Reject Reversal ||");
             System.out.println("|| 0. Logout                  ||");
             System.out.print("Escolha uma opção: ");
             int option = scanner.nextInt();
@@ -291,6 +365,10 @@ public class App {
 
                     desbloquearContasBloqueadas(scanner);
                     break;
+                case 5:
+
+                    menuEstornosGerente(scanner);
+                    break;
                 case 0:
                     running = false;
                     System.out.println("Fazendo logout do menu gerente...");
@@ -309,6 +387,9 @@ public class App {
             System.out.println("|| 2. Withdraw             ||");
             System.out.println("|| 3. Check Balance        ||");
             System.out.println("|| 4. Transfer             ||");
+            System.out.println("|| 5. Request Reversal     ||");
+            System.out.println("|| 6. View extract   ||");
+            System.out.println("|| 7. Export extract in csv file   ||");
             System.out.println("|| 0. Exit                 ||");
             System.out.println("=============================");
             System.out.print("Choose an option: ");
@@ -350,6 +431,55 @@ public class App {
                         // Atualiza a conta logada com os dados do banco
                         conta = contaDAO.findById(conn, conta.getId());
                         break;
+                    case 5:
+                        System.out.println("Digite o ID da transação que deseja estornar:");
+                        int idTransacao = scanner.nextInt();
+                        scanner.nextLine();
+
+                        System.out.println("Digite o motivo do estorno:");
+                        String motivoEstorno = scanner.nextLine();
+
+                        transacaoDAO.solicitarEstorno(conn, idTransacao, conta.getCpf(), motivoEstorno);
+                        break;
+                    case 6:
+                        System.out.println("===== Extrato Bancário =====");
+                        List<Transacao> extrato = transacaoDAO.buscarExtratoPorConta(conn, conta);
+
+                        if (extrato.isEmpty()) {
+                            System.out.println("Nenhuma transação encontrada.");
+                        } else {
+                            for (Transacao t : extrato) {
+                                String tipo = t.getTipo();
+                                String info = "";
+
+                                if (tipo.equalsIgnoreCase("TRANSFERENCIA")) {
+                                    if (t.getContaOrigem().getId() == conta.getId()) {
+                                        info = "Transferência Enviada para Conta ID: " + t.getContaDestino().getId();
+                                    } else {
+                                        info = "Transferência Recebida de Conta ID: " + t.getContaOrigem().getId();
+                                    }
+                                } else if (tipo.equalsIgnoreCase("SAQUE")) {
+                                    info = "Saque Realizado";
+                                } else if (tipo.equalsIgnoreCase("DEPOSITO")) {
+                                    info = "Depósito Realizado";
+                                }
+
+                                System.out.println(info +
+                                        " | Valor: " + t.getValor() +
+                                        " | Data: " + t.getDataHora());
+                            }
+                        }
+                        break;
+                    case 7:
+                        System.out.println("===== Exportar Extrato CSV =====");
+                        List<Transacao> extratoExport = transacaoDAO.buscarExtratoPorConta(conn, conta);
+
+                        if (extratoExport.isEmpty()) {
+                            System.out.println("Nenhuma transação encontrada para exportar.");
+                        } else {
+                            transacaoDAO.exportarExtratoCSV(extratoExport);
+                        }
+                        break;
                     case 0:
                         System.out.println("Saindo do menu bancário...");
                         running = false;
@@ -357,11 +487,14 @@ public class App {
                     default:
                         System.out.println("Invalid option! Please try again.");
                 }
+            } catch (SQLException e) {
+                throw new RuntimeException(e);
             } finally {
                 DB.closeConnection();
             }
         }
     }
+
 
 
     public static void registrarGerente(Scanner scanner, Usuario gerenteLogado) {
