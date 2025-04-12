@@ -3,6 +3,7 @@ package br.com.compass.DAO;
 import br.com.compass.Entity.Conta;
 import br.com.compass.Entity.Transacao;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -169,24 +170,34 @@ public class TransacaoDAO {
         }
         return null;
     }
-    public void exportarExtratoCSV(List<Transacao> transacoes) {
-        String caminhoArquivo = "C:\\Desafio_compass\\BankChallenge\\src\\main\\java\\csvfiles\\extrato.csv";
+    public void exportarExtratoCSV(List<Transacao> transacoes, String diretorio) {
+        File pasta = new File(diretorio);
+        if (!pasta.exists()) {
+            pasta.mkdirs(); // cria pasta se não existir
+        }
 
-        try (FileWriter writer = new FileWriter(caminhoArquivo)) {
+        int numeroArquivo = 1;
+        File arquivoCSV;
+
+        // Procura um nome disponível (extrato1, extrato2, extrato3...)
+        do {
+            arquivoCSV = new File(diretorio + "/extrato" + numeroArquivo + ".csv");
+            numeroArquivo++;
+        } while (arquivoCSV.exists());
+
+        try (FileWriter writer = new FileWriter(arquivoCSV)) {
             writer.append("Tipo,Valor,DataHora\n");
+
             for (Transacao t : transacoes) {
-                writer.append(t.getTipo())
-                        .append(",")
-                        .append(t.getValor().toString())
-                        .append(",")
-                        .append(t.getDataHora().toString())
-                        .append("\n");
+                writer.append(t.getTipo() + "," + t.getValor() + "," + t.getDataHora() + "\n");
             }
-            System.out.println("Extrato exportado com sucesso para: " + caminhoArquivo);
+
+            System.out.println("Extrato exportado com sucesso: " + arquivoCSV.getAbsolutePath());
         } catch (IOException e) {
-            throw new RuntimeException("Erro ao exportar CSV: " + e.getMessage());
+            throw new RuntimeException("Erro ao exportar extrato CSV: " + e.getMessage());
         }
     }
+
 
     // Listar todas as transações
     public List<Transacao> buscarTransacoesPendentesEstorno(Connection conn) throws SQLException {

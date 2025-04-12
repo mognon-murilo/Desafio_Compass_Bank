@@ -477,7 +477,7 @@ public class App {
                         if (extratoExport.isEmpty()) {
                             System.out.println("Nenhuma transação encontrada para exportar.");
                         } else {
-                            transacaoDAO.exportarExtratoCSV(extratoExport);
+                            transacaoDAO.exportarExtratoCSV(extratoExport, "C:/Desafio_compass/BankChallenge/src/main/java/csvfiles");
                         }
                         break;
                     case 0:
