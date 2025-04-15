@@ -60,8 +60,14 @@ public class App {
             System.out.println("|| 0. Exit                 ||");
             System.out.println("=============================");
             System.out.print("Choose an option: ");
-            int option = scanner.nextInt();
-            scanner.nextLine(); // Limpar buffer
+
+            int option = -1;
+            try {
+                option = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Entrada inválida! Digite um número.");
+                continue;
+            }
 
             switch (option) {
                 case 1:
@@ -72,9 +78,10 @@ public class App {
                     break;
                 case 0:
                     running = false;
+                    System.out.println("Saindo...");
                     break;
                 default:
-                    System.out.println("Invalid option! Please try again.");
+                    System.out.println("Opção inválida! Tente novamente.");
             }
         }
     }
@@ -125,28 +132,71 @@ public class App {
             conn = DB.getConnection();
 
             System.out.println("\n===== Account Opening =====");
-            System.out.print("Nome: ");
-            String nome = scanner.nextLine();
-            System.out.print("CPF: ");
-            String cpf = scanner.nextLine();
-            System.out.print("Telefone: ");
-            String telefone = scanner.nextLine();
-            System.out.print("Data de Nascimento (yyyy-MM-dd): ");
-            String dataNascimento = scanner.nextLine();
-            System.out.print("Tipo de Conta (Corrente/Poupanca): ");
-            String tipoConta = scanner.nextLine();
-            System.out.print("Senha: ");
-            String senha = scanner.nextLine();
 
-            // Para registros via menu público, o tipo é fixado como CLIENTE
+            // Nome
+            String nome;
+            while (true) {
+                System.out.print("Nome: ");
+                nome = scanner.nextLine();
+                if (!nome.trim().isEmpty()) break;
+                System.out.println("Entrada inválida! Insira um nome válido.");
+            }
+
+            // CPF
+            String cpf;
+            while (true) {
+                System.out.print("CPF: ");
+                cpf = scanner.nextLine();
+                if (cpf.matches("\\d{11}")) break;
+                System.out.println("Entrada inválida! Insira um CPF com 11 dígitos numéricos.");
+            }
+
+            // Telefone
+            String telefone;
+            while (true) {
+                System.out.print("Telefone: ");
+                telefone = scanner.nextLine();
+                if (telefone.matches("\\d{10,11}")) break;
+                System.out.println("Entrada inválida! Insira um número de telefone com 10 ou 11 dígitos.");
+            }
+
+            // Data de nascimento
+            LocalDate dataNascimento = null;
+            while (dataNascimento == null) {
+                System.out.print("Data de Nascimento (yyyy-MM-dd): ");
+                String dataInput = scanner.nextLine();
+                try {
+                    dataNascimento = LocalDate.parse(dataInput);
+                } catch (Exception e) {
+                    System.out.println("Entrada inválida! Insira a data no formato correto (yyyy-MM-dd).");
+                }
+            }
+
+            // Tipo de conta
+            String tipoConta;
+            while (true) {
+                System.out.print("Tipo de Conta (Corrente/Poupanca): ");
+                tipoConta = scanner.nextLine().trim().toUpperCase();
+                if (tipoConta.equals("CORRENTE") || tipoConta.equals("POUPANCA")) break;
+                System.out.println("Entrada inválida! Digite 'Corrente' ou 'Poupanca'.");
+            }
+
+            // Senha
+            String senha;
+            while (true) {
+                System.out.print("Senha: ");
+                senha = scanner.nextLine();
+                if (!senha.trim().isEmpty()) break;
+                System.out.println("Entrada inválida! A senha não pode estar vazia.");
+            }
+
             String tipo = "CLIENTE";
             String senhaHash = BCrypt.hashpw(senha, BCrypt.gensalt());
 
-            Usuario usuario = new Usuario(nome, cpf, senhaHash, telefone, LocalDate.parse(dataNascimento), tipo);
+            Usuario usuario = new Usuario(nome, cpf, senhaHash, telefone, dataNascimento, tipo);
             usuarioDAO.create(conn, usuario);
 
-            // Cria a conta associada ao usuário
-            Conta conta = new Conta(nome, cpf, telefone, LocalDate.parse(dataNascimento), tipoConta, senhaHash);
+            Conta conta = new Conta(nome, cpf, telefone, dataNascimento, tipoConta, senhaHash);
             contaDAO.inserir(conn, conta);
 
             System.out.println("Usuário e conta criados com sucesso!");
@@ -332,16 +382,21 @@ public class App {
             System.out.println("|| 1. Bank Operations         ||");
             System.out.println("|| 2. Register New Manager    ||");
             System.out.println("|| 3. Account Opening         ||");
-            System.out.println("|| 4. Unblock Accounts         ||");
+            System.out.println("|| 4. Unblock Accounts        ||");
             System.out.println("|| 5. Approve/Reject Reversal ||");
             System.out.println("|| 0. Logout                  ||");
             System.out.print("Escolha uma opção: ");
-            int option = scanner.nextInt();
-            scanner.nextLine(); // Limpar buffer
+
+            int option = -1;
+            try {
+                option = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Entrada inválida. Digite um número.");
+                continue;
+            }
 
             switch (option) {
-                case 1:
-                    // Para operações bancárias, utiliza a conta associada ao gerente
+                case 1 -> {
                     Connection conn = null;
                     try {
                         conn = DB.getConnection();
@@ -354,97 +409,115 @@ public class App {
                     } finally {
                         DB.closeConnection();
                     }
-                    break;
-                case 2:
-                    registrarGerente(scanner, gerenteLogado);
-                    break;
-                case 3:
-                    criarContaParaGerente(scanner, gerenteLogado);
-                    break;
-                case 4:
-
-                    desbloquearContasBloqueadas(scanner);
-                    break;
-                case 5:
-
-                    menuEstornosGerente(scanner);
-                    break;
-                case 0:
+                }
+                case 2 -> registrarGerente(scanner, gerenteLogado);
+                case 3 -> registrarGerente(scanner, gerenteLogado); // CORRETO aqui!
+                case 4 -> desbloquearContasBloqueadas(scanner);
+                case 5 -> menuEstornosGerente(scanner);
+                case 0 -> {
                     running = false;
                     System.out.println("Fazendo logout do menu gerente...");
-                    break;
-                default:
-                    System.out.println("Opção inválida.");
+                }
+                default -> System.out.println("Opção inválida. Tente novamente.");
             }
         }
     }
+
+    private static BigDecimal lerValorMonetario(Scanner scanner, String mensagem) {
+        BigDecimal valor = null;
+        while (valor == null) {
+            System.out.print(mensagem + " ");
+            String entrada = scanner.nextLine().replace(",", ".");
+            try {
+                valor = new BigDecimal(entrada);
+                if (valor.compareTo(BigDecimal.ZERO) <= 0) {
+                    System.out.println("Valor precisa ser positivo.");
+                    valor = null;
+                }
+            } catch (NumberFormatException e) {
+                System.out.println("Entrada inválida. Digite um valor numérico (ex: 100.50 ou 100,50).");
+            }
+        }
+        return valor;
+    }
+
+    private static int lerInteiro(Scanner scanner, String mensagem) {
+        Integer valor = null;
+        while (valor == null) {
+            System.out.print(mensagem + " ");
+            String entrada = scanner.nextLine();
+            try {
+                valor = Integer.parseInt(entrada);
+            } catch (NumberFormatException e) {
+                System.out.println("Entrada inválida. Digite um número inteiro.");
+            }
+        }
+        return valor;
+    }
+
 
     public static void bankMenu(Scanner scanner, Conta conta) {
         boolean running = true;
         while (running) {
             System.out.println("\n========= Bank Menu =========");
-            System.out.println("|| 1. Deposit              ||");
-            System.out.println("|| 2. Withdraw             ||");
-            System.out.println("|| 3. Check Balance        ||");
-            System.out.println("|| 4. Transfer             ||");
-            System.out.println("|| 5. Request Reversal     ||");
-            System.out.println("|| 6. View extract   ||");
-            System.out.println("|| 7. Export extract in csv file   ||");
-            System.out.println("|| 0. Exit                 ||");
-            System.out.println("=============================");
+            System.out.println("|| 1. Deposit                      ||");
+            System.out.println("|| 2. Withdraw                     ||");
+            System.out.println("|| 3. Check Balance                ||");
+            System.out.println("|| 4. Transfer                     ||");
+            System.out.println("|| 5. Request Reversal             ||");
+            System.out.println("|| 6. View extract                 ||");
+            System.out.println("|| 7. Export extract in csv file  ||");
+            System.out.println("|| 0. Exit                         ||");
+            System.out.println("====================================");
             System.out.print("Choose an option: ");
 
-            int option = scanner.nextInt();
-            scanner.nextLine(); // Limpar buffer
+            int option;
+            try {
+                option = Integer.parseInt(scanner.nextLine());
+            } catch (NumberFormatException e) {
+                System.out.println("Opção inválida. Digite um número.");
+                continue;
+            }
 
             Connection conn = null;
             try {
                 conn = DB.getConnection();
                 switch (option) {
-                    case 1:
-                        System.out.print("Valor para depósito: ");
-                        BigDecimal valorDeposito = scanner.nextBigDecimal();
-                        scanner.nextLine();
+                    case 1: {
+                        BigDecimal valorDeposito = lerValorMonetario(scanner, "Valor para depósito:");
                         contaDAO.depositar(conn, conta, valorDeposito);
                         System.out.println("Depósito realizado com sucesso.");
                         break;
-                    case 2:
-                        System.out.print("Valor para saque: ");
-                        BigDecimal valorSaque = scanner.nextBigDecimal();
-                        scanner.nextLine();
+                    }
+                    case 2: {
+                        BigDecimal valorSaque = lerValorMonetario(scanner, "Valor para saque:");
                         if (contaDAO.sacar(conn, conta, valorSaque)) {
                             System.out.println("Saque realizado com sucesso.");
                         } else {
                             System.out.println("Saque não realizado: saldo insuficiente.");
                         }
                         break;
+                    }
                     case 3:
                         System.out.println("Saldo atual: " + conta.getSaldo());
                         break;
-                    case 4:
-                        System.out.print("Digite o ID da conta destino: ");
-                        int idContaDestino = scanner.nextInt();
-                        System.out.print("Digite o valor para transferir: ");
-                        BigDecimal valorTransferencia = scanner.nextBigDecimal();
-                        scanner.nextLine();
+                    case 4: {
+                        int idContaDestino = lerInteiro(scanner, "Digite o ID da conta destino:");
+                        BigDecimal valorTransferencia = lerValorMonetario(scanner, "Digite o valor para transferir:");
                         transacaoDAO.transferir(conn, conta, idContaDestino, valorTransferencia);
-                        // Atualiza a conta logada com os dados do banco
                         conta = contaDAO.findById(conn, conta.getId());
                         break;
-                    case 5:
-                        System.out.println("Digite o ID da transação que deseja estornar:");
-                        int idTransacao = scanner.nextInt();
-                        scanner.nextLine();
-
+                    }
+                    case 5: {
+                        int idTransacao = lerInteiro(scanner, "Digite o ID da transação que deseja estornar:");
                         System.out.println("Digite o motivo do estorno:");
                         String motivoEstorno = scanner.nextLine();
-
                         transacaoDAO.solicitarEstorno(conn, idTransacao, conta.getCpf(), motivoEstorno);
                         break;
-                    case 6:
+                    }
+                    case 6: {
                         System.out.println("===== Extrato Bancário =====");
                         List<Transacao> extrato = transacaoDAO.buscarExtratoPorConta(conn, conta);
-
                         if (extrato.isEmpty()) {
                             System.out.println("Nenhuma transação encontrada.");
                         } else {
@@ -470,22 +543,26 @@ public class App {
                             }
                         }
                         break;
-                    case 7:
+                    }
+                    case 7: {
                         System.out.println("===== Exportar Extrato CSV =====");
                         List<Transacao> extratoExport = transacaoDAO.buscarExtratoPorConta(conn, conta);
-
                         if (extratoExport.isEmpty()) {
                             System.out.println("Nenhuma transação encontrada para exportar.");
                         } else {
-                            transacaoDAO.exportarExtratoCSV(extratoExport, "C:/Desafio_compass/BankChallenge/src/main/java/csvfiles");
+                            transacaoDAO.exportarExtratoCSV(
+                                    extratoExport,
+                                    "C:/Desafio_compass/BankChallenge/src/main/java/csvfiles"
+                            );
                         }
                         break;
+                    }
                     case 0:
                         System.out.println("Saindo do menu bancário...");
                         running = false;
                         break;
                     default:
-                        System.out.println("Invalid option! Please try again.");
+                        System.out.println("Opção inválida.");
                 }
             } catch (SQLException e) {
                 throw new RuntimeException(e);
@@ -499,80 +576,52 @@ public class App {
 
     public static void registrarGerente(Scanner scanner, Usuario gerenteLogado) {
         if (!gerenteLogado.getCpf().equals("00000000000")) {
-            System.out.println("Acesso negado: somente o Gerente Principal podem registrar novos gerentes.");
+            System.out.println("Acesso negado: somente o Gerente Principal pode registrar novos gerentes.");
             return;
         }
+
         Connection conn = null;
+
         try {
             conn = DB.getConnection();
 
-            System.out.println("\n===== Register New Manager =====");
+            System.out.println("\n===== Registrar Novo Gerente =====");
+
             System.out.print("Nome: ");
             String nome = scanner.nextLine();
+
             System.out.print("CPF: ");
             String cpf = scanner.nextLine();
+
             System.out.print("Telefone: ");
             String telefone = scanner.nextLine();
-            System.out.print("Data de Nascimento (yyyy-MM-dd): ");
-            String dataNascimento = scanner.nextLine();
+
+            LocalDate dataNascimento = null;
+            while (dataNascimento == null) {
+                System.out.print("Data de Nascimento (yyyy-MM-dd): ");
+                String data = scanner.nextLine();
+                try {
+                    dataNascimento = LocalDate.parse(data);
+                } catch (Exception e) {
+                    System.out.println("Data inválida! Use o formato yyyy-MM-dd.");
+                }
+            }
+
             System.out.print("Senha: ");
             String senha = scanner.nextLine();
-
-            String tipo = "GERENTE";
             String senhaHash = BCrypt.hashpw(senha, BCrypt.gensalt());
 
-            Usuario novoGerente = new Usuario(nome, cpf, senhaHash, telefone, LocalDate.parse(dataNascimento), tipo);
+            String tipo = "GERENTE";
+            Usuario novoGerente = new Usuario(nome, cpf, senhaHash, telefone, dataNascimento, tipo);
             usuarioDAO.create(conn, novoGerente);
 
-
             System.out.println("Novo gerente registrado com sucesso!");
+
         } catch (dbException e) {
             e.printStackTrace();
         } finally {
             DB.closeConnection();
         }
     }
-    private static void criarContaParaGerente(Scanner scanner, Usuario gerenteLogado) {
-        Connection conn = null;
 
-        try {
-            conn = DB.getConnection();
-
-            // Verifica se o gerente já possui conta
-            Conta contaExistente = contaDAO.findByCpf(conn, gerenteLogado.getCpf());
-            if (contaExistente != null) {
-                System.out.println("Você já possui uma conta cadastrada.");
-                return;
-            }
-
-            System.out.println("\n===== Criar Conta Bancária =====");
-            System.out.print("Tipo de Conta (Corrente/Poupanca): ");
-            String tipoConta = scanner.nextLine();
-            System.out.print("Digite sua senha para confirmar: ");
-            String senhaDigitada = scanner.nextLine();
-
-
-            if (!BCrypt.checkpw(senhaDigitada, gerenteLogado.getSenhaHash())) {
-                System.out.println("Senha incorreta! Conta não foi criada.");
-                return;
-            }
-
-            Conta novaConta = new Conta(
-                    gerenteLogado.getNome(),
-                    gerenteLogado.getCpf(),
-                    gerenteLogado.getTelefone(),
-                    gerenteLogado.getDataNascimento(),
-                    tipoConta,
-                    gerenteLogado.getSenhaHash()
-            );
-
-            contaDAO.inserir(conn, novaConta);
-            System.out.println("Conta criada com sucesso!");
-
-        } catch (dbException e) {
-            throw new dbException("Erro ao criar conta: " + e.getMessage());
-        } finally {
-            DB.closeConnection();
-        }
-    }
 }
