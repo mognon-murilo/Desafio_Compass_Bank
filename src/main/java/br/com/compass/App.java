@@ -411,7 +411,7 @@ public class App {
                     }
                 }
                 case 2 -> registrarGerente(scanner, gerenteLogado);
-                case 3 -> registrarGerente(scanner, gerenteLogado); // CORRETO aqui!
+                case 3 -> criarContaParaGerente(scanner, gerenteLogado); // CORRETO aqui!
                 case 4 -> desbloquearContasBloqueadas(scanner);
                 case 5 -> menuEstornosGerente(scanner);
                 case 0 -> {
@@ -575,6 +575,49 @@ public class App {
             } finally {
                 DB.closeConnection();
             }
+        }
+    }
+    private static void criarContaParaGerente(Scanner scanner, Usuario gerenteLogado) {
+        Connection conn = null;
+
+        try {
+            conn = DB.getConnection();
+
+            // Verifica se o gerente já possui conta
+            Conta contaExistente = contaDAO.findByCpf(conn, gerenteLogado.getCpf());
+            if (contaExistente != null) {
+                System.out.println("Você já possui uma conta cadastrada.");
+                return;
+            }
+
+            System.out.println("\n===== Criar Conta Bancária =====");
+            System.out.print("Tipo de Conta (Corrente/Poupanca): ");
+            String tipoConta = scanner.nextLine();
+            System.out.print("Digite sua senha para confirmar: ");
+            String senhaDigitada = scanner.nextLine();
+
+
+            if (!BCrypt.checkpw(senhaDigitada, gerenteLogado.getSenhaHash())) {
+                System.out.println("Senha incorreta! Conta não foi criada.");
+                return;
+            }
+
+            Conta novaConta = new Conta(
+                    gerenteLogado.getNome(),
+                    gerenteLogado.getCpf(),
+                    gerenteLogado.getTelefone(),
+                    gerenteLogado.getDataNascimento(),
+                    tipoConta,
+                    gerenteLogado.getSenhaHash()
+            );
+
+            contaDAO.inserir(conn, novaConta);
+            System.out.println("Conta criada com sucesso!");
+
+        } catch (dbException e) {
+            throw new dbException("Erro ao criar conta: " + e.getMessage());
+        } finally {
+            DB.closeConnection();
         }
     }
 
