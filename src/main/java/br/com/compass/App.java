@@ -175,10 +175,10 @@ public class App {
             // Tipo de conta
             String tipoConta;
             while (true) {
-                System.out.print("Tipo de Conta (Corrente/Poupanca): ");
+                System.out.print("Tipo de Conta (Corrente/Poupanca/Conta Salario): ");
                 tipoConta = scanner.nextLine().trim().toUpperCase();
-                if (tipoConta.equals("CORRENTE") || tipoConta.equals("POUPANCA")) break;
-                System.out.println("Entrada inválida! Digite 'Corrente' ou 'Poupanca'.");
+                if (tipoConta.equals("CORRENTE") || tipoConta.equals("POUPANCA") || tipoConta.equals("CONTA SALARIO")) break;
+                System.out.println("Entrada inválida! Digite 'Corrente', 'Poupanca' ou 'Conta Salario'.");
             }
 
             // Senha
@@ -502,6 +502,12 @@ public class App {
                         System.out.println("Saldo atual: " + conta.getSaldo());
                         break;
                     case 4: {
+                        
+                        if (conta.getTipoConta().equals("CONTA SALARIO")) {
+                            System.out.println("Não é permitido realizar transferências de uma conta salário.");
+                            break;
+                        }
+
                         int idContaDestino = lerInteiro(scanner, "Digite o ID da conta destino:");
                         BigDecimal valorTransferencia = lerValorMonetario(scanner, "Digite o valor para transferir:");
                         transacaoDAO.transferir(conn, conta, idContaDestino, valorTransferencia);
